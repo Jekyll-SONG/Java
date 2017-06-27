@@ -1,4 +1,4 @@
-package com.xie.googleclick;
+package general;
 
 import java.sql.Connection;
 import java.sql.ResultSet;

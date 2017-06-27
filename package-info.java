@@ -5,4 +5,4 @@
  * @author พรฮไ
  *
  */
-package hibernate;
+package dao;

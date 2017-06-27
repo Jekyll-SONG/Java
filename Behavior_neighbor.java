@@ -1,4 +1,4 @@
-package com.xie;
+package behavior;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -11,20 +11,25 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
+import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
+import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
+import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+
 import dao.connection;
 
-public class Write_behavior_into_CF {
+public class Behavior_neighbor {
+    final static int NEIGHBORHOOD_NUM = 10;
+	
 	public void clear_data() throws IOException{
-		//connect to file
 		File csv = new File("src/data/testCF.csv");
-		//create the file writer
 		FileWriter fw =  new FileWriter(csv);
-		//delete all existing data in testCF file
 		fw.write("");
-		//close the file
 		fw.close();
-		//inform the user
-		System.out.println("Clear finished");
+		System.out.println("File has been cleared");
 	}
 
 	public double avg(ArrayList<Double> list){
@@ -65,7 +70,6 @@ public class Write_behavior_into_CF {
 		new dao.connection();
 		Connection conn = connection.getDao();
 		Statement stmt = null;
-
 		List<Integer> user=new ArrayList<Integer>(); 
 		
 		//in total 36 items
@@ -107,10 +111,7 @@ public class Write_behavior_into_CF {
 		ArrayList<Double> active_user_click_total=new ArrayList<Double>();
 
     	try{
-    	    //STEP 4: Execute a query
-    	    System.out.println("Creating statement...");
     	    stmt = conn.createStatement();
-
 
     	    String sql = "select * from table_1";
     	    ResultSet rs = stmt.executeQuery(sql);
@@ -160,46 +161,40 @@ public class Write_behavior_into_CF {
     	    
     	    int size=user.size();
 
-    	    File csv = new File("src/data/testCF.csv"); // csv file
+    	    File csv = new File("src/data/testCF.csv");
     
-    	    BufferedWriter bw = new BufferedWriter(new FileWriter(csv, true)); // add to new line
+    	    BufferedWriter bw = new BufferedWriter(new FileWriter(csv, true));
     	    
     	    ArrayList<Double> during_std=standardise_list(during);
     	    ArrayList<Double> during_experiment_std=standardise_list(during_experiment);
     	    ArrayList<Double> click_total_std=standardise_list(click_total);
     	    ArrayList<Double> action_during_sum_std=standardise_list(action_during_sum);
     	    ArrayList<Double> action_during_avg_std=standardise_list(action_during_avg);
-    	    
     	    ArrayList<Double> action_leave_sum_std=standardise_list(action_leave_sum);
     	    ArrayList<Double> action_quit_sum_std=standardise_list(action_quit_sum);
     	    ArrayList<Double> action_leave_problem_sum_std=standardise_list(action_leave_problem_sum);
     	    ArrayList<Double> action_quit_problem_sum_std=standardise_list(action_quit_problem_sum);
     	    ArrayList<Double> active_day_std=standardise_list(active_day);
-    	    
     	    ArrayList<Double> active_time_day_std=standardise_list(active_time_day);
     	    ArrayList<Double> login_days_total_std=standardise_list(login_days_total);
     	    ArrayList<Double> usage_daily_avg_std=standardise_list(usage_daily_avg);
     	    ArrayList<Double> usage_daily_std_std=standardise_list(usage_daily_std);
     	    ArrayList<Double> login_prob_std=standardise_list(login_prob);
-    	    
     	    ArrayList<Double> click_prob_std=standardise_list(during);standardise_list(click_prob);
     	    ArrayList<Double> click_once_login_std=standardise_list(click_once_login);
     	    ArrayList<Double> usage_time_prob_std=standardise_list(usage_time_prob);
     	    ArrayList<Double> usage_time_once_login_std=standardise_list(usage_time_once_login);
     	    ArrayList<Double> action_leave_prob_std=standardise_list(action_leave_prob);
-    	    
     	    ArrayList<Double> login_prob_2_std=standardise_list(login_prob_2);
     	    ArrayList<Double> action_leave_problem_prob_std=standardise_list(action_leave_problem_prob);
     	    ArrayList<Double> active_click_prob_std=standardise_list(active_click_prob);
     	    ArrayList<Double> active_time_prob_std=standardise_list(active_time_prob);
     	    ArrayList<Double> action_leave_question_prob_perc_std=standardise_list(action_leave_question_prob_perc);
-    	    
     	    ArrayList<Double> action_quit_question_prob_perc_std=standardise_list(action_quit_question_prob_perc);
     	    ArrayList<Double> come_back_std=standardise_list(come_back);
     	    ArrayList<Double> come_back2_std=standardise_list(come_back2);
     	    ArrayList<Double> come_back3_std=standardise_list(come_back3);
     	    ArrayList<Double> active_user_click_prob_std=standardise_list(active_user_click_prob);
-    	    
     	    ArrayList<Double> active_user_login_prob_std=standardise_list(active_user_login_prob);
     	    ArrayList<Double> active_user_usage_time_prob_std=standardise_list(active_user_usage_time_prob);
     	    ArrayList<Double> active_user_login_prob_2_std=standardise_list(active_user_login_prob_2);
@@ -281,9 +276,7 @@ public class Write_behavior_into_CF {
     	    	bw.write(user.get(i)+","+36+","+active_user_click_total_std.get(i)); 
     	    	bw.newLine(); 
     	    }
-    	    	
     	    bw.close();
-          
  	      }catch(SQLException se){
 	        se.printStackTrace();
 	      }catch(Exception e){
@@ -301,15 +294,61 @@ public class Write_behavior_into_CF {
   	           se.printStackTrace();
   	        }
   	     }
-  	     System.out.println("Goodbye!");
+  	     System.out.println("Data has been written to the file");
   	}
 	
-	public static void main(String[] args) throws IOException {
-		Write_behavior_into_CF gen = new Write_behavior_into_CF();
+    public void write_neighborhood() throws IOException, TasteException{
+		new dao.connection();
+		Connection conn = connection.getDao();
+		Statement stmt = null;
+        String file = "src/data/testCF.csv";
+        DataModel model = new FileDataModel(new File(file));
+        UserSimilarity user = new EuclideanDistanceSimilarity(model);
+        NearestNUserNeighborhood neighbor = new NearestNUserNeighborhood(NEIGHBORHOOD_NUM, user, model);
+        
+		try{
+		      stmt = conn.createStatement();
+		      LongPrimitiveIterator iter=model.getUserIDs();
+		      while(iter.hasNext()){
+			      String sql="insert into user_neighborhood (user_id, neighbor_id, similarity, method) values";
+			      for(int m=0; m<50&&iter.hasNext(); m++){
+			    	  String string_id=Long.toString(iter.next());
+			    	  int user_id=Integer.parseInt(string_id);
+			      
+			    	  long neighbor_id[]=neighbor.getUserNeighborhood(user_id);
+
+			    	  for(int j=0; j<NEIGHBORHOOD_NUM && j<neighbor_id.length; j++){
+			    		  sql+=" ("+user_id+", "+neighbor_id[j]+", "+user.userSimilarity(user_id, neighbor_id[j])+", 1),";
+			    	  }
+			      }
+	    	      sql= sql.substring(0, sql.length()-1);
+			      stmt.executeUpdate(sql);
+		      }
+		      System.out.println("Neighbors have been inserted");
+			}catch(SQLException se){
+		      se.printStackTrace();
+		   }catch(Exception e){
+		      e.printStackTrace();
+		   }finally{
+		      try{
+		         if(stmt!=null)
+		            conn.close();
+		      }catch(SQLException se){
+		      }
+		      try{
+		         if(conn!=null)
+		            conn.close();
+		      }catch(SQLException se){
+		         se.printStackTrace();
+		      }
+		   }
+    }
+
+	public static void main(String[] args) throws IOException, TasteException {
+		Behavior_neighbor gen = new Behavior_neighbor();
 		gen.clear_data();
 		gen.write_data();
-		
-		System.out.println("Success");
+    	gen.write_neighborhood();
 	}
 }
 

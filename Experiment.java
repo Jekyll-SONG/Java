@@ -1,4 +1,4 @@
-package com.xie;
+package general;
 import org.apache.mahout.cf.taste.common.TasteException;
 //import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
 //import org.apache.mahout.cf.taste.impl.model.file.*;  

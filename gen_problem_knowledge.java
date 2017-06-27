@@ -1,21 +1,22 @@
-package com.xie;
+package general;
 
-import java.sql.Connection;
-//import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
 
 import org.hibernate.Transaction;
+//import java.io.BufferedWriter; 
+//import java.io.File; 
+//import java.io.FileNotFoundException; 
+//import java.io.FileWriter; 
+//import java.io.IOException; 
+//import java.util.*; 
+
 
 import dao.connection;
 
-public class Write_data {
-	
-	public List<hibernate.UserKnowledge> get_record_list()
+public class gen_problem_knowledge {
+
+	public List<hibernate.UserKnowledge> get_Record_list()
 	{
 		new dao.connection();
 		List<hibernate.UserKnowledge> recordlist = new ArrayList<hibernate.UserKnowledge> ();
@@ -25,8 +26,8 @@ public class Write_data {
 		try {
 			 stmt = conn.createStatement();
 			
-			 String sql="select U.user_id as user_id, T.eventAction as knowledge_id, T.date as date, T.action_during as isWrong "+
-	    		  		" from table_2 T, user_id_map U where U.user_label=T.eventLabel and T.eventCategory='Exercise_Problem' order by user_id, knowledge_id";
+			 String sql="select R.user_id as user_id, K.knowledge_id as knowledge_id, R.date as date, R.isWrong as isWrong "+
+	    		  		" from record R, knowledge_problem K where R.problem_id=K.problem_id order by user_id";
  	  
 			 ResultSet result=stmt.executeQuery(sql);
 			 System.out.println("Getting the record");
@@ -34,7 +35,7 @@ public class Write_data {
 			 while(result.next()){
 	    		  Timestamp time=result.getTimestamp("date");
 	    		  
-	    		  hibernate.UserKnowledge item = new hibernate.UserKnowledge();
+	    		  hibernate.UserKnowledge item = new  hibernate.UserKnowledge();
 	    		  item.setDate(time);
 	    		  item.setIsWrong(result.getInt("isWrong"));
 	    		  item.setKnowledgeId(result.getInt("knowledge_id"));
@@ -56,7 +57,7 @@ public class Write_data {
 		return recordlist;
 	}
 	
-	public boolean write_to_User_knowledge(List<hibernate.UserKnowledge> myrecordlist)
+	public boolean Save_to_User_knowledge(List<hibernate.UserKnowledge> myrecordlist)
 	{
 		String sql="insert into user_knowledge (user_id, knowledge_id, date, isWrong) values ";
 		// 533925 
@@ -106,12 +107,18 @@ public class Write_data {
 		 return event_id;
 	}
 	
+	
+
 	public void create_user_knowledge_table(){
 		new dao.connection();
 		Connection conn = connection.getDao();
 		Statement stmt = null;
 
 		try{
+			//STEP 2: Register JDBC driver
+		    Class.forName("com.mysql.jdbc.Driver");
+
+		    //STEP 3: Open a connection
 		    System.out.println("Connecting to a selected database...");
 		    System.out.println("Connected database successfully...");
 		      
@@ -152,12 +159,12 @@ public class Write_data {
 	}
 	
 	public static void main(String[] args) {
-		Write_data gen = new Write_data();
+	
+		gen_problem_knowledge gen = new gen_problem_knowledge();
 		gen.create_user_knowledge_table();
-		List<hibernate.UserKnowledge> recordlist  = gen.get_record_list();
-		gen.write_to_User_knowledge(recordlist);
+		List<hibernate.UserKnowledge> recordlist  = gen.get_Record_list();
+		gen.Save_to_User_knowledge(recordlist);
 		
 		System.out.println("success");
 	}//end main
-
 }

@@ -1,4 +1,4 @@
-package com.xie.behavior;
+package com.xie;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,66 +15,25 @@ import org.apache.mahout.cf.taste.model.DataModel;
 import org.apache.mahout.cf.taste.similarity.UserSimilarity;
 
 import dao.connection;
-/***
- * 
- * write into db from CSV results.
- * @author Li Tao
- *
- */
+
 public class Write_behavior_neighborhood {
     final static int NEIGHBORHOOD_NUM = 10;
     
-    
-    public void drop_table()
-    
-    {Connection conn = new dao.connection().getDao();
-	Statement stmt = null;
-	   
-	try{
- 	    stmt = conn.createStatement();
-	      
-	    String sql = "drop table if exists user_neighborhood";
-
-	    stmt.executeUpdate(sql);
-	    System.out.println("drop table success...");
-	 }catch(SQLException se){
-	    //Handle errors for JDBC
-	    se.printStackTrace();
-	 }catch(Exception e){
-	    //Handle errors for Class.forName
-	    e.printStackTrace();
-	 }finally{
-	    //finally block used to close resources
-	    try{
-	       if(stmt!=null)
-	          conn.close();
-	    }catch(SQLException se){
-	    }// do nothing
-	    try{
-	       if(conn!=null)
-	          conn.close();
-	    }catch(SQLException se){
-	       se.printStackTrace();
-	    }
-	 }
-        
-    }
     public void create_table(){
-    	drop_table();
-    	Connection conn = new dao.connection().getDao();
+    	new dao.connection();
+		Connection conn = connection.getDao();
 		Statement stmt = null;
 		   
 		try{
 			System.out.println("Creating table in given database...");
 		    stmt = conn.createStatement();
 		      
-		    String sql = " CREATE TABLE user_neighborhood (" +
+		    String sql = "CREATE TABLE user_neighborhood (" +
 		                 " user_id Integer, "+
 		                 " neighbor_id Integer, " + 
 		                 " similarity Double, " +
-		                 " method Integer"
-		            //     + ",  PRIMARY KEY ( user_id, neighbor_id )"
-		                 + ")"; 
+		                 " method Integer, " +
+		                 " PRIMARY KEY ( user_id, neighbor_id ))"; 
 
 		    stmt.executeUpdate(sql);
 		    System.out.println("Created table in given database...");
@@ -166,7 +125,6 @@ public class Write_behavior_neighborhood {
     }
     
     public static void main(String[] args) throws IOException, TasteException {
-    	
     	Write_behavior_neighborhood item=new Write_behavior_neighborhood();
     	item.create_table();
     	item.write_neighborhood();

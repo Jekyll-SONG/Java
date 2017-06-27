@@ -1,4 +1,4 @@
-package com.xie.googleclick;
+package com.xie;
 
 //STEP 1. Import required packages
 import java.sql.*;
@@ -11,13 +11,7 @@ import java.io.IOException;
 import java.util.*;  
 
 import dao.connection;
-/***
- * 
- * 
- * Generate CSV for Calculate.
- * @author Li Tao
- *
- */
+
 public class write_into_testCF {
 
 	public void clear_data() throws IOException{

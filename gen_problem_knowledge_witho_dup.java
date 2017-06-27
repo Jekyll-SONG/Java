@@ -1,17 +1,12 @@
-package com.xie;
+package general;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.*;
+import java.util.*;
 
 import dao.connection;
 
-public class Eliminate_dup_sum {
-	public List<hibernate.UserKnowledge> get_record_list()
+public class gen_problem_knowledge_witho_dup {
+	public List<hibernate.UserKnowledge> get_Record_list()
 	{
 		new dao.connection();
 		List<hibernate.UserKnowledge> recordlist = new ArrayList<hibernate.UserKnowledge> ();
@@ -37,11 +32,13 @@ public class Eliminate_dup_sum {
 	    		  recordlist.add(item);
 	    	 }
 		} catch (SQLException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		 try {
 			conn.close();
 		} catch (SQLException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}  
 
@@ -49,6 +46,7 @@ public class Eliminate_dup_sum {
 		
 		return recordlist;
 	}
+	
 	
 	public List<hibernate.UserKnowledgeWithoutDuplicate> calculate_prob(List<hibernate.UserKnowledge> myrecordlist)
 	{
@@ -101,20 +99,22 @@ public class Eliminate_dup_sum {
 		return recordlist;
 	}
 	
+	
 	public double calculate_pro_list (List<Integer> wrong_list )
 	{
-		double pro=0;
+		double pro =0;
 		for (int i=0; i<wrong_list.size(); i++) 
 		{
-			pro+=wrong_list.get(i);
+			pro += wrong_list.get(i);
 		}
 		
-		return pro;
+		return  pro / wrong_list.size();
 	}
 	
-	public boolean save_to_User_knowledge(List<hibernate.UserKnowledgeWithoutDuplicate> myrecordlist)
+	
+	public boolean Save_to_User_knowledge(List<hibernate.UserKnowledgeWithoutDuplicate> myrecordlist)
 	{
-		String sql="insert into user_knowledge_sum (user_id, knowledge_id, isWrong) values ";
+		String sql="insert into user_knowledge_without_duplicate (user_id, knowledge_id, isWrong) values ";
 		// 533925 
 		for (int i=0; i<myrecordlist.size();i++)
 		{
@@ -123,10 +123,7 @@ public class Eliminate_dup_sum {
 			sql+=" ("+record.getUserId()+", "+record.getKnowledgeId()+", "+record.getIsWrong()+"),";
 			if(i==myrecordlist.size()-1 || i%500 ==0 ) 
 			{
-				if (sql != null && sql.length() > 0 && sql.charAt(sql.length()-1)==','){
-					sql=sql.substring(0, sql.length()-1);
-				}
-				
+				sql=sql.substring(0, sql.length()-1);
 				new dao.connection();
 				Connection conn = connection.getDao();
 				Statement stmt;
@@ -136,9 +133,10 @@ public class Eliminate_dup_sum {
 					conn.close();
 //					
 //					System.out.println("--------" + i);
-					sql="insert into user_knowledge_sum (user_id, knowledge_id, isWrong) values ";
+					sql="insert into user_knowledge_without_duplicate (user_id, knowledge_id, isWrong) values ";
 					
 				} catch (SQLException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -146,8 +144,8 @@ public class Eliminate_dup_sum {
 		
 		return true;
 	}
-	
-	public void create_user_knowledge_avg(){
+
+	public void Create_user_knowledge_without_duplicate(){
 		new dao.connection();
 		
 		Connection conn = connection.getDao();
@@ -157,7 +155,7 @@ public class Eliminate_dup_sum {
 			System.out.println("Creating table in given database...");
 		    stmt = conn.createStatement();
 		      
-		    String sql = "CREATE TABLE user_knowledge_sum " +
+		    String sql = "CREATE TABLE user_knowledge_without_duplicate " +
 		                 "(record_id INTEGER not NULL AUTO_INCREMENT, " +
 		                 " user_id Integer, "+
 		                 " knowledge_id Integer, " + 
@@ -187,15 +185,18 @@ public class Eliminate_dup_sum {
 		    }
 		 }
 	}
-	
+
 	public static void main(String[] args) {
-		Eliminate_dup_sum gen = new Eliminate_dup_sum();
-		gen.create_user_knowledge_avg();
+	//191426
 		
-		List<hibernate.UserKnowledge> recordlist=gen.get_record_list();
+		gen_problem_knowledge_witho_dup gen = new gen_problem_knowledge_witho_dup();
+		gen.Create_user_knowledge_without_duplicate();
+		List<hibernate.UserKnowledge> recordlist  = gen.get_Record_list();
+//		for(int i=0; i<5000; i++){
+//			System.out.println(recordlist.get(i).getUserId()+" "+recordlist.get(i).getKnowledgeId());
+//		}
 		List<hibernate.UserKnowledgeWithoutDuplicate> recordlist_witho_dup =gen.calculate_prob(recordlist);
-		
-		gen.save_to_User_knowledge(recordlist_witho_dup);
+		gen.Save_to_User_knowledge(recordlist_witho_dup);
 		System.out.println("success");
-	}
+	}//end main
 }

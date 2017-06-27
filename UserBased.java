@@ -1,4 +1,4 @@
-package com.xie;
+package general;
 
 import org.apache.mahout.cf.taste.common.TasteException;
 //import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
@@ -12,20 +12,14 @@ import org.apache.mahout.cf.taste.similarity.*;
 
 import java.io.*;  
 import java.util.*;  
-/***
- * 
- * 
- * Calculate neighborhood by CSV.
- * @author Li Tao
- *
- */
+
 public class UserBased {
 
     final static int NEIGHBORHOOD_NUM = 10;
-//    final static int RECOMMENDER_NUM = 3;
+    final static int RECOMMENDER_NUM = 3;
 
     public static void main(String[] args) throws IOException, TasteException {
-        String file = "src/data/testCF.csv";
+        String file = "src/data/testCF_sample.csv";
         
         //when duplicate, this function uses override method
         DataModel model = new FileDataModel(new File(file));
@@ -69,5 +63,6 @@ public class UserBased {
             id=s.nextInt();
        }
        s.close();
-    }
-}
+        }
+     }
+

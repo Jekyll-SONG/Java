@@ -1,5 +1,7 @@
-package com.xie;
+package chapter;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,21 +10,29 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.mahout.cf.taste.common.TasteException;
+import org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator;
+import org.apache.mahout.cf.taste.impl.model.file.FileDataModel;
+import org.apache.mahout.cf.taste.impl.neighborhood.NearestNUserNeighborhood;
+import org.apache.mahout.cf.taste.impl.similarity.EuclideanDistanceSimilarity;
+import org.apache.mahout.cf.taste.model.DataModel;
+import org.apache.mahout.cf.taste.similarity.UserSimilarity;
+
 import dao.connection;
 
-public class Eliminate_dup_sum {
+public class Chapter_merge {
+    final static int NEIGHBORHOOD_NUM = 10;
 	public List<hibernate.UserKnowledge> get_record_list()
 	{
 		new dao.connection();
 		List<hibernate.UserKnowledge> recordlist = new ArrayList<hibernate.UserKnowledge> ();
-		
 		Connection conn = connection.getDao();
 		Statement stmt;
 		try {
 			 stmt = conn.createStatement();
 			
-			 String sql="select user_id, knowledge_id, date, isWrong "+
-	    		  		"from user_knowledge order by user_id,knowledge_id, date";
+			 String sql="select user_id, chapter_id, date, isWrong "+
+	    		  		"from user_chapter order by user_id, chapter_id, date";
  	  
 			 ResultSet result=stmt.executeQuery(sql);
 
@@ -32,7 +42,7 @@ public class Eliminate_dup_sum {
 	    		  hibernate.UserKnowledge item = new hibernate.UserKnowledge();
 	    		  item.setDate(time);
 	    		  item.setIsWrong(result.getInt("isWrong"));
-	    		  item.setKnowledgeId(result.getInt("knowledge_id"));
+	    		  item.setKnowledgeId(result.getInt("chapter_id"));
 	    		  item.setUserId(result.getInt("user_id"));
 	    		  recordlist.add(item);
 	    	 }
@@ -85,19 +95,16 @@ public class Eliminate_dup_sum {
 				
 				user_id_pre = myrecord.getUserId() ;
 				knowledge_id_pre = myrecord.getKnowledgeId() ;
-				
-//				System.out.println(user_id_pre+" "+knowledge_id_pre);
 			}
 		}
 		
 		double pro = calculate_pro_list(wrong_list);
 		hibernate.UserKnowledgeWithoutDuplicate item = new hibernate.UserKnowledgeWithoutDuplicate();
-		item.setUserId(myrecord_pre.getUserId());
-		item.setKnowledgeId(myrecord_pre.getKnowledgeId());
+		item.setUserId(user_id_pre);
+		item.setKnowledgeId(knowledge_id_pre);
 		item.setIsWrong(pro);
 		recordlist.add(item);
 
-//		System.out.println("Success, recordlist: "+recordlist.size());
 		return recordlist;
 	}
 	
@@ -114,8 +121,7 @@ public class Eliminate_dup_sum {
 	
 	public boolean save_to_User_knowledge(List<hibernate.UserKnowledgeWithoutDuplicate> myrecordlist)
 	{
-		String sql="insert into user_knowledge_sum (user_id, knowledge_id, isWrong) values ";
-		// 533925 
+		String sql="insert into user_chapter_sum (user_id, chapter_id, isWrong) values ";
 		for (int i=0; i<myrecordlist.size();i++)
 		{
 			hibernate.UserKnowledgeWithoutDuplicate record = myrecordlist.get(i);
@@ -134,9 +140,7 @@ public class Eliminate_dup_sum {
 					stmt = conn.createStatement();
 					stmt.executeUpdate(sql);
 					conn.close();
-//					
-//					System.out.println("--------" + i);
-					sql="insert into user_knowledge_sum (user_id, knowledge_id, isWrong) values ";
+					sql="insert into user_chapter_sum (user_id, chapter_id, isWrong) values ";
 					
 				} catch (SQLException e) {
 					e.printStackTrace();
@@ -147,38 +151,24 @@ public class Eliminate_dup_sum {
 		return true;
 	}
 	
-	public void create_user_knowledge_avg(){
+	public void delete(){
 		new dao.connection();
-		
 		Connection conn = connection.getDao();
 		Statement stmt = null;
-		   
 		try{
-			System.out.println("Creating table in given database...");
 		    stmt = conn.createStatement();
-		      
-		    String sql = "CREATE TABLE user_knowledge_sum " +
-		                 "(record_id INTEGER not NULL AUTO_INCREMENT, " +
-		                 " user_id Integer, "+
-		                 " knowledge_id Integer, " + 
-		                 " isWrong Double, " +
-		                 " PRIMARY KEY ( record_id ))"; 
-
+		    String sql = "drop table if exists user_chapter_sum"; 
 		    stmt.executeUpdate(sql);
-		    System.out.println("Created table in given database...");
 		 }catch(SQLException se){
-		    //Handle errors for JDBC
 		    se.printStackTrace();
 		 }catch(Exception e){
-		    //Handle errors for Class.forName
 		    e.printStackTrace();
 		 }finally{
-		    //finally block used to close resources
 		    try{
 		       if(stmt!=null)
 		          conn.close();
 		    }catch(SQLException se){
-		    }// do nothing
+		    }
 		    try{
 		       if(conn!=null)
 		          conn.close();
@@ -188,9 +178,99 @@ public class Eliminate_dup_sum {
 		 }
 	}
 	
+	public void create_user_section_sum(){
+		new dao.connection();
+		
+		Connection conn = connection.getDao();
+		Statement stmt = null;
+		   
+		try{
+			System.out.println("Creating table in given database...");
+		    stmt = conn.createStatement();
+		      
+		    String sql = "CREATE TABLE user_chapter_sum " +
+		                 "(record_id INTEGER not NULL AUTO_INCREMENT, " +
+		                 " user_id Integer, "+
+		                 " chapter_id Integer, " + 
+		                 " isWrong Double, " +
+		                 " PRIMARY KEY ( record_id ))"; 
+
+		    stmt.executeUpdate(sql);
+		    System.out.println("Created table in given database...");
+		 }catch(SQLException se){
+		    se.printStackTrace();
+		 }catch(Exception e){
+		    e.printStackTrace();
+		 }finally{
+		    try{
+		       if(stmt!=null)
+		          conn.close();
+		    }catch(SQLException se){
+		    }
+		    try{
+		       if(conn!=null)
+		          conn.close();
+		    }catch(SQLException se){
+		       se.printStackTrace();
+		    }
+		 }
+	}
+	
+	public void gen_neighborhood() throws IOException, TasteException{
+		new dao.connection();
+		Connection conn = connection.getDao();
+		Statement stmt = null;
+		
+	    String file = "src/data/testCF.csv";
+	    DataModel model = new FileDataModel(new File(file));
+	    UserSimilarity user = new EuclideanDistanceSimilarity(model);
+	    NearestNUserNeighborhood neighbor = new NearestNUserNeighborhood(NEIGHBORHOOD_NUM, user, model);
+
+		try{
+			stmt = conn.createStatement();
+			LongPrimitiveIterator iter=model.getUserIDs();
+
+			while(iter.hasNext()){
+				String sql="insert into user_neighborhood (user_id, neighbor_id, similarity, method) values";
+				for(int m=0; m<50&&iter.hasNext(); m++){
+					String string_id=Long.toString(iter.next());
+				    int user_id=Integer.parseInt(string_id);
+				    long neighbor_id[]=neighbor.getUserNeighborhood(user_id);
+				    for(int j=0; j<NEIGHBORHOOD_NUM; j++){
+				    	sql+=" ("+user_id+", "+neighbor_id[j]+", "+user.userSimilarity(user_id, neighbor_id[j])+" ),";
+				    }
+				}
+
+		    	sql= sql.substring(0, sql.length()-1);
+				      
+				stmt.executeUpdate(sql);
+			}
+			      
+			System.out.println("neighbor has been inserted");
+
+				}catch(SQLException se){
+			      se.printStackTrace();
+			   }catch(Exception e){
+			      e.printStackTrace();
+			   }finally{
+			      try{
+			         if(stmt!=null)
+			            conn.close();
+			      }catch(SQLException se){
+			      }
+			      try{
+			         if(conn!=null)
+			            conn.close();
+			      }catch(SQLException se){
+			         se.printStackTrace();
+			      }
+			   }
+	    }
+
 	public static void main(String[] args) {
-		Eliminate_dup_sum gen = new Eliminate_dup_sum();
-		gen.create_user_knowledge_avg();
+		Chapter_merge gen = new Chapter_merge();
+		gen.delete();
+		gen.create_user_section_sum();
 		
 		List<hibernate.UserKnowledge> recordlist=gen.get_record_list();
 		List<hibernate.UserKnowledgeWithoutDuplicate> recordlist_witho_dup =gen.calculate_prob(recordlist);
