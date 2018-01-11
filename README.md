@@ -1,2 +1,2 @@
 # Java
-this is for 2016 UROP
+This is for 2016 UROP Collaborative Filtering Project
